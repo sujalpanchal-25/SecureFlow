@@ -6,45 +6,78 @@ on:
       - main
 
 jobs:
-  ci:
-    runs-on: ubuntu-latest
 
+  checkout:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+  verify:
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Verify required files
         run: |
           test -f index.html
           test -f style.css
           test -f script.js
 
-      - name: Basic validation test
-        run: |
-          echo "Running basic CI checks..."
-          ls -la
-          echo "CI checks completed successfully."
-
-  cd:
-    needs: ci
+  validation:
+    needs: verify
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run validation
+        run: |
+          echo "Running validation..."
+          ls -la
+          echo "Validation successful"
 
+  test:
+    needs: validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run basic tests
+        run: |
+          echo "Running tests..."
+          grep "<html" index.html
+          echo "Tests passed successfully"
+
+  setup_pages:
+    needs: test
+    runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write
       contents: read
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+  upload:
+    needs: setup_pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
+  deploy:
+    needs: upload
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+    steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
