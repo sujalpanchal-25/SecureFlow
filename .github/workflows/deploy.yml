@@ -7,7 +7,31 @@ on:
 
 jobs:
 
+  secret_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run GitLeaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency_scan:
+    needs: secret_scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Dependency Vulnerability Scan
+        run: |
+          echo "Checking dependencies for vulnerabilities"
+          npm audit || true
+
   checkout:
+    needs: dependency_scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
